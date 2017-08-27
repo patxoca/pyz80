@@ -8,7 +8,9 @@ con lo que la velocidad no es un problema.
 Python por su parte proporciona la facilidad de programación y la
 posibilidad de hacer pruebas interactivas desde el interprete.
 
-Ejemplo::
+Ejemplo:
+
+.. code-block:: python
 
    from pyz80 import Z80
 
