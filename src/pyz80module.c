@@ -56,18 +56,24 @@ static const TRegisterMapping register_mapping[] = {
     {NULL}
 };
 
-static TRegisterMapping *lookup_register(char *regname) {
-    TRegisterMapping *p = (TRegisterMapping *)register_mapping;
+/* lookup_register(regname)
+ *
+ * Dado un nombre de registro lo busca en la tabla register_mapping.
+ * Si corresponde a un registro válido devuelve un puntero a la
+ * entrada correspondiente, eoc devuelve NULL.
+ *
+ * La búsqueda es insensible a las mayúsculas/minúsculas.
+ */
+static const TRegisterMapping *lookup_register(const char *regname) {
+    const TRegisterMapping *p = register_mapping;
 
-    while (1) {
-        if (p->name == NULL) {
-            return NULL;
-        }
-        if (strcmp(p->name, regname) == 0) {
+    while (p->name != NULL) {
+        if (strcasecmp(p->name, regname) == 0) {
             return p;
         }
         p++;
     }
+    return NULL;
 }
 
 
@@ -283,7 +289,7 @@ static PyObject *Z80_peek(PyZ80 *self, PyObject *args, PyObject *kwargs) {
 static PyObject *Z80_load_register(PyZ80 *self, PyObject *args, PyObject *kwargs) {
     int value;
     PyObject *name;
-    TRegisterMapping *p;
+    const TRegisterMapping *p;
 
     static char *kwlist[] = {"register", "value", NULL};
 
