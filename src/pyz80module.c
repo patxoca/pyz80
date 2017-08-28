@@ -95,6 +95,7 @@ static PyObject *Z80_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
         Z80Reset(&(self->state));
         memset(&(self->context.memory), 0, MEMORY_SIZE);
         self->context.is_done = 0;
+        self->context.cycle_count = 0;
     }
 
     return (PyObject *)self;
@@ -137,6 +138,7 @@ static PyObject *Z80_reset(PyZ80 *self) {
     Z80Reset(&(self->state));
     memset(&(self->context.memory), 0, MEMORY_SIZE);
     self->context.is_done = 0;
+    self->context.cycle_count = 0;
 
     Py_RETURN_NONE;
 }
@@ -169,7 +171,7 @@ static PyObject *Z80_emulate(PyZ80 *self, PyObject *args, PyObject *kwargs) {
         return NULL;
 
     TRACE("emulate %i cycles\n", num_cycles);
-    Z80Emulate(&(self->state), num_cycles, &(self->context));
+    self->context.cycle_count += Z80Emulate(&(self->state), num_cycles, &(self->context));
     Py_RETURN_NONE;
 }
 
@@ -195,6 +197,11 @@ static PyObject *Z80_get_isdone(PyZ80 *self, void *closure)
     } else {
         Py_RETURN_FALSE;
     }
+}
+
+static PyObject *Z80_get_cycle_count(PyZ80 *self, void *closure)
+{
+    return PyInt_FromLong(self->context.cycle_count);
 }
 
 /*
@@ -337,6 +344,7 @@ static PyObject *Z80_register(PyZ80 *self, PyObject *args, PyObject *kwargs) {
 static PyGetSetDef Z80_getseters[] = {
     {"memory",  (getter)Z80_getmemory,  NULL, "memory buffer", NULL},
     {"is_done", (getter)Z80_get_isdone, NULL, "done flag",     NULL},
+    {"cycles",  (getter)Z80_get_cycle_count, NULL, "get number of cycles ellapsed", NULL},
     {NULL}  /* Sentinel */
 };
 

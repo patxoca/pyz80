@@ -10,6 +10,7 @@ typedef unsigned char TByte;
 typedef struct {
     TByte     memory[MEMORY_SIZE];  /* 64K */
     int       is_done;
+    long      cycle_count;
 } TContext;
 
 #endif /* _ZEXT_H_ */
