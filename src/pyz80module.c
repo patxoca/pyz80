@@ -38,9 +38,13 @@ static const TRegisterMapping register_mapping[] = {
     {"L", 0, Z80_L},
 
     {"IXH", 0, Z80_IXH},
+    {"HX",  0, Z80_IXH},
     {"IXL", 0, Z80_IXL},
+    {"LX",  0, Z80_IXL},
     {"IYH", 0, Z80_IYH},
+    {"HY",  0, Z80_IYH},
     {"IYL", 0, Z80_IYL},
+    {"LY",  0, Z80_IYL},
 
     {"BC", 1, Z80_BC},
     {"DE", 1, Z80_DE},
