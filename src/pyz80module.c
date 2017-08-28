@@ -296,8 +296,8 @@ static PyObject *Z80_register(PyZ80 *self, PyObject *args, PyObject *kwargs) {
 
     p = lookup_register(PyString_AsString(name));
     if (p == NULL) {
-        // TODO: set exception
         TRACE("register not found: %s\n", PyString_AsString(name));
+        PyErr_SetString(PyExc_ValueError, "unknown register");
         return NULL;
     }
 
