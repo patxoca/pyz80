@@ -235,69 +235,56 @@ static PyObject *Z80_load_memory(PyZ80 *self, PyObject *args, PyObject *kwargs) 
 }
 
 /*
- * Write memory address.
+ * Lectura/escritura de la memoria.
  *
- *   poke(address, value)
+ *   escritura: z.memory(address, value) -> None
+ *   lectura:   z.memory(address) -> value
  *
  * address: integer (0-65536)
  * value: integer (0-255)
  *
  */
-static PyObject *Z80_poke(PyZ80 *self, PyObject *args, PyObject *kwargs) {
+static PyObject *Z80_memory(PyZ80 *self, PyObject *args, PyObject *kwargs) {
     int address;
-    int value;
+    int value = 0xFABADA;
 
     static char *kwlist[] = {"address", "value", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ii", kwlist, &address, &value))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|i", kwlist, &address, &value))
         return NULL;
 
-    // TODO: check address and value range
-    self->context.memory[address & 0xFFFF] = value & 0xFF;
+    if (value == 0xFABADA) { /* lectura */
+        // TODO: check address range
+        TRACE("memory[%04x] => %02x\n", address & 0xFFFF,
+              self->context.memory[address & 0xFFFF]);
+        return PyInt_FromLong(self->context.memory[address & 0xFFFF]);
+    } else {
+        // TODO: check address and value range
+        self->context.memory[address & 0xFFFF] = value & 0xFF;
 
-    TRACE("poke(%04x, %02x)\n", address & 0xFFFF, value & 0xFF);
-    Py_RETURN_NONE;
+        TRACE("memory[%04x] <= %02x\n", address & 0xFFFF, value & 0xFF);
+        Py_RETURN_NONE;
+    }
 }
 
 /*
- * Read memory address.
+ * Lectura/escritura de los registros.
  *
- *   peek(address) -> value
+ *   escritura: z.register(name, value) -> None
+ *   lectura:   z.register(name) -> value
  *
- * address: integer (0-65536)
- * value: integer (0-255)
- *
- */
-static PyObject *Z80_peek(PyZ80 *self, PyObject *args, PyObject *kwargs) {
-    static char *kwlist[] = {"address", NULL};
-    int address;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i", kwlist, &address))
-        return NULL;
-
-    // TODO: check address range
-    TRACE("peek(%04x) => %02x\n", address & 0xFFFF,
-          self->context.memory[address & 0xFFFF]);
-    return PyInt_FromLong(self->context.memory[address & 0xFFFF]);
-}
-
-/*
- * Load register.
- *
- *   load_register(name, value)
- *
- * name: string, uppercase
- * value: integer (0-255 o 0-65535)
+ * name: string
+ * value: int (0-255 o 0-65535)
  *
  */
-static PyObject *Z80_load_register(PyZ80 *self, PyObject *args, PyObject *kwargs) {
-    int value;
+static PyObject *Z80_register(PyZ80 *self, PyObject *args, PyObject *kwargs) {
+    int value = 0xFABADA; /* value puede ser un u8 o u16 */
     PyObject *name;
     const TRegisterMapping *p;
 
     static char *kwlist[] = {"register", "value", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Si", kwlist, &name, &value))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "S|i", kwlist, &name, &value))
         return NULL;
 
     p = lookup_register(PyString_AsString(name));
@@ -307,24 +294,43 @@ static PyObject *Z80_load_register(PyZ80 *self, PyObject *args, PyObject *kwargs
         return NULL;
     }
 
-    // TODO: check value range
-    switch (p->dw) {
-    case 0:
-        self->state.registers.byte[p->index] = value & 0xFF;
-        TRACE("load_register: %s = %02x\n", p->name, value & 0xFF);
-        break;
+    if (value == 0xFABADA) { /* read */
+        switch (p->dw) {
+        case 0:
+            value = self->state.registers.byte[p->index];
+            TRACE("read_register: %s => %02x\n", p->name, value);
+            break;
 
-    case 1:
-        self->state.registers.word[p->index] = value & 0xFFFF;
-        TRACE("load_register: %s = %04x\n", p->name, value & 0xFFFF);
-        break;
+        case 1:
+            value = self->state.registers.word[p->index];
+            TRACE("read_register: %s => %04x\n", p->name, value);
+            break;
 
-    case 2:
-        self->state.pc = value &0xFFFF;
-        break;
+        case 2:
+            value = self->state.pc;
+            TRACE("read_register: %s => %04x\n", p->name, value);
+            break;
+        }
+        return PyInt_FromLong(value);
+    } else { /* write */
+        // TODO: check value range
+        switch (p->dw) {
+        case 0:
+            self->state.registers.byte[p->index] = value & 0xFF;
+            TRACE("load_register: %s = %02x\n", p->name, value & 0xFF);
+            break;
+
+        case 1:
+            self->state.registers.word[p->index] = value & 0xFFFF;
+            TRACE("load_register: %s = %04x\n", p->name, value & 0xFFFF);
+            break;
+
+        case 2:
+            self->state.pc = value &0xFFFF;
+            break;
+        }
+        Py_RETURN_NONE;
     }
-
-    Py_RETURN_NONE;
 }
 
 
@@ -355,11 +361,9 @@ static PyMethodDef Z80_methods[] = {
      "Run the emulation for a given numver of cycles"},
     {"load_memory", (PyCFunction)Z80_load_memory, METH_KEYWORDS,
      "Load the memory from a string"},
-    {"poke", (PyCFunction)Z80_poke, METH_KEYWORDS,
+    {"memory", (PyCFunction)Z80_memory, METH_KEYWORDS,
      "Write a memory location"},
-    {"peek", (PyCFunction)Z80_peek, METH_KEYWORDS,
-     "Read a memory location"},
-    {"load_register", (PyCFunction)Z80_load_register, METH_KEYWORDS,
+    {"register", (PyCFunction)Z80_register, METH_KEYWORDS,
      "Load a register"},
     {NULL}  /* Sentinel */
 };
