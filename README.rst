@@ -43,11 +43,20 @@ Escribir la memoria, un byte:
    emu.memory(0x1234, 0xAB)
 
 
-Escribir un bloque de memoria, n bytes:
+Escribir un bloque de memoria, n bytes, desde una cadena (``str`` py2,
+``byte`` py3):
 
 .. code-block:: python
 
    data = "\0x01\0x02\0x03"
+   emu.load_memory(data, 0x1234)
+
+
+Escribir un bloque de memoria, n bytes, desde un ``bytearray``:
+
+.. code-block:: python
+
+   data = bytearray([0x01, 0x02, 0x03])
    emu.load_memory(data, 0x1234)
 
 
