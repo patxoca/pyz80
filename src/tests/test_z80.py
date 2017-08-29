@@ -2,7 +2,6 @@
 
 # $Id:$
 
-import sys
 from random import randint
 from unittest import TestCase
 from pyz80 import Z80
@@ -76,16 +75,43 @@ class TestZEXT(TestCase):
 
     def _test_file(self, name):
 
+        # Ejecuta el binario 'name' capturando la salida por pantalla
+        # (solo funciones 2 i 9) en la lista 'stdout'. Una vez
+        # finalizada la emulación comprueba la salida para detectar
+        # errores.
+        #
+        # La primera línea de la salida es una cabecera:
+        #
+        #   Z80 instruction exerciser
+        #
+        # A continuación vienen los tests. Un test que pasa se muestra
+        # como:
+        #
+        #   <adc,sbc> hl,<bc,de,hl,sp>... OK
+        #
+        # i uno que falla como:
+        #
+        #   <adc,sbc> hl,<bc,de,hl,sp>...
+        #   CRC:xxxxxxxx expected:xxxxxxxx
+        #
+        # La última línea de la salida es un pie:
+        #
+        #   Tests complete
+        #
+
+        stdout = []
+        wrt = stdout.append
+
         def syscall(z):
             if z.register("c") == 2:
-                sys.stdout.write(chr(z.register("e")))
+                wrt(chr(z.register("e")))
                 return
 
             if z.register("c") == 9:
                 address = z.register("DE")
                 count = 0
                 while address < 65536 and z.memory(address) != ord("$") and count < 100:
-                    sys.stdout.write(chr(z.memory(address)))
+                    wrt(chr(z.memory(address)))
                     address += 1
                     count += 1
                 return
@@ -93,6 +119,7 @@ class TestZEXT(TestCase):
         with open(name, "rb") as f:
             data = f.read()
         z = Z80()
+        z.syscall(syscall)
         z.load_memory(data, 0x100)
         z.memory(0, 0xd3)
         z.memory(1, 0x00)
@@ -103,6 +130,11 @@ class TestZEXT(TestCase):
         z.register("pc", 0x100)
         while not z.is_done:
             z.emulate(80000)
+
+        lines = ("".join(stdout)).split("\n\r")
+        for line in lines[1:-1]:
+            self.assertEqual(line[-2:], "OK", line)
+
 
     def test_zexall(self):
         self._test_file("../z80emu/testfiles/zexall.com")
