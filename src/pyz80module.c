@@ -17,6 +17,7 @@ typedef struct {
     /* Type-specific fields go here. */
     Z80_STATE state;
     TContext  context;
+    PyObject *syscall;
 } PyZ80;
 
 
@@ -96,6 +97,8 @@ static PyObject *Z80_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
         memset(&(self->context.memory), 0, MEMORY_SIZE);
         self->context.is_done = 0;
         self->context.cycle_count = 0;
+        self->context.py_object = self;
+        self->syscall = NULL;
     }
 
     return (PyObject *)self;
@@ -340,6 +343,40 @@ static PyObject *Z80_register(PyZ80 *self, PyObject *args, PyObject *kwargs) {
     }
 }
 
+static PyObject *Z80_set_syscall(PyZ80 *self, PyObject *args)
+{
+    PyObject *result = NULL;
+    PyObject *temp;
+
+    if (PyArg_ParseTuple(args, "O:set_syscall", &temp)) {
+        if (!PyCallable_Check(temp)) {
+            PyErr_SetString(PyExc_TypeError, "parameter must be callable");
+            return NULL;
+        }
+        Py_INCREF(temp);
+        Py_XDECREF(self->syscall);
+        self->syscall = temp;
+        Py_INCREF(Py_None);
+        result = Py_None;
+    }
+    return result;
+}
+
+void SystemCall(TContext *context) {
+    PyZ80 *self = (PyZ80*)context->py_object;
+    PyObject *arglist;
+    PyObject *result;
+
+    if (self->syscall) {
+        arglist = Py_BuildValue("(O)", self);
+        result = PyObject_CallObject(self->syscall, arglist);
+        Py_DECREF(arglist);
+        if (result == NULL) {
+            return;
+        }
+        Py_DECREF(result);
+    }
+}
 
 static PyGetSetDef Z80_getseters[] = {
     {"memory",  (getter)Z80_getmemory,  NULL, "memory buffer", NULL},
@@ -373,6 +410,8 @@ static PyMethodDef Z80_methods[] = {
      "Write a memory location"},
     {"register", (PyCFunction)Z80_register, METH_KEYWORDS,
      "Load a register"},
+    {"syscall", (PyCFunction)Z80_set_syscall, METH_VARARGS,
+     "Set syscall function"},
     {NULL}  /* Sentinel */
 };
 

@@ -122,12 +122,10 @@ extern "C" {
 
 #define Z80_WRITE_WORD_INTERRUPT(address, x) Z80_WRITE_WORD((address), (x))
 
-#define Z80_INPUT_BYTE(port, x)
-
-/* #define Z80_INPUT_BYTE(port, x)                                         \ */
-/* {                                                                       \ */
-/*         SystemCall((TContext *) context);               \ */
-/* } */
+#define Z80_INPUT_BYTE(port, x)                                         \
+{                                                                       \
+        SystemCall((TContext *) context);               \
+}
 
 #define Z80_OUTPUT_BYTE(port, x)          \
 {                                         \

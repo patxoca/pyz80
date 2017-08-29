@@ -2,6 +2,7 @@
 
 # $Id:$
 
+import sys
 from random import randint
 from unittest import TestCase
 from pyz80 import Z80
@@ -63,3 +64,42 @@ class TestZ80(_Base):
         self.z.load_memory("".join([chr(i) for i in m]), 0)
         for i in xrange(65536):
             self.assertEqual(self.z.memory(i), m[i])
+
+
+class TestZEXT(TestCase):
+
+    def _test_file(self, name):
+
+        def syscall(z):
+            if z.register("c") == 2:
+                sys.stdout.write(chr(z.register("e")))
+                return
+
+            if z.register("c") == 9:
+                address = z.register("DE")
+                count = 0
+                while address < 65536 and z.memory(address) != ord("$") and count < 100:
+                    sys.stdout.write(chr(z.memory(address)))
+                    address += 1
+                    count += 1
+                return
+
+        with open(name, "rb") as f:
+            data = f.read()
+        z = Z80()
+        z.load_memory(data, 0x100)
+        z.memory(0, 0xd3)
+        z.memory(1, 0x00)
+        z.memory(5, 0xdb)
+        z.memory(6, 0x00)
+        z.memory(7, 0xc9)
+
+        z.register("pc", 0x100)
+        while not z.is_done:
+            z.emulate(80000)
+
+    def test_zexall(self):
+        self._test_file("../z80emu/testfiles/zexall.com")
+
+    def test_zexdoc(self):
+        self._test_file("../z80emu/testfiles/zexdoc.com")
