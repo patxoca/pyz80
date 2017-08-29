@@ -65,7 +65,7 @@ Escribir un registro:
    emu.register("A", 0xAB)
 
 
-Asignar /syscall/:
+Asignar *syscall*:
 
 .. code-block:: python
 
@@ -93,7 +93,7 @@ Obtener el número de ciclos emulados:
 Ejemplos
 ========
 
-El directorio [[./src/examples][src/examples]] contiene varios
+El directorio `src/examples <./src/examples>`_ contiene varios
 ejemplos:
 
 - `demo.py <./src/examples/zexall.py>`_: ejemplo sencillo en el que se
@@ -113,7 +113,7 @@ TODO
 
 - Mejorar la API, no es muy *pythonica*.
 
-- En ~load_memory~ utilizar un ~bytearray~ en lugar de un ~str~.
+- En ``load_memory`` utilizar un ``bytearray`` en lugar de un ``str``.
 
 - Añadir *profiling*. Por el momento añadir contadores para las
   lecturas i escrituras de la RAM.
