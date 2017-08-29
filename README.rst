@@ -96,7 +96,7 @@ Ejemplos
 El directorio `src/examples <./src/examples>`_ contiene varios
 ejemplos:
 
-- `demo.py <./src/examples/zexall.py>`_: ejemplo sencillo en el que se
+- `demo.py <./src/examples/demo.py>`_: ejemplo sencillo en el que se
   muestra como cargar un programa y ejecutarlo.
 
 - `zexall.py <./src/examples/zexall.py>`_: muestra como implementar
