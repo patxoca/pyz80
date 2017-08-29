@@ -113,7 +113,5 @@ TODO
 
 - Mejorar la API, no es muy *pythonica*.
 
-- En ``load_memory`` utilizar un ``bytearray`` en lugar de un ``str``.
-
 - Añadir *profiling*. Por el momento añadir contadores para las
   lecturas i escrituras de la RAM.
