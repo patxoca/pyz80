@@ -59,9 +59,15 @@ class TestZ80(_Base):
             self.z.register(r, v)
             self.assertEqual(self.z.register(r), v)
 
-    def test_load_memory(self):
+    def test_load_memory_from_str(self):
         m = [randint(0, 255) for i in xrange(65536)]
         self.z.load_memory("".join([chr(i) for i in m]), 0)
+         for i in xrange(65536):
+             self.assertEqual(self.z.memory(i), m[i])
+
+    def test_load_memory_from_bytearray(self):
+        m = bytearray([randint(0, 255) for i in xrange(65536)])
+        self.z.load_memory(m, 0)
         for i in xrange(65536):
             self.assertEqual(self.z.memory(i), m[i])
 

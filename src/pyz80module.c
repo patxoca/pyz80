@@ -217,7 +217,7 @@ static PyObject *Z80_get_cycle_count(PyZ80 *self, void *closure)
  *
  *   load_memory(data, address)
  *
- * data: string
+ * data: str or bytearray
  * address: integer (0-65536)
  *
  */
@@ -229,13 +229,21 @@ static PyObject *Z80_load_memory(PyZ80 *self, PyObject *args, PyObject *kwargs) 
 
     static char *kwlist[] = {"data", "address", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Si", kwlist, &data, &address))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Oi", kwlist, &data, &address))
         return NULL;
-
+    if (!PyByteArray_Check(data) && !PyString_Check(data)) {
+        PyErr_SetString(PyExc_ValueError, "str or bytearray object required");
+        return NULL;
+    }
+    if (PyByteArray_Check(data)) {
+        len = PyByteArray_GET_SIZE(data);
+        bytes = PyByteArray_AS_STRING(data);
+    } else {
+        len = PyString_GET_SIZE(data);
+        bytes = PyString_AS_STRING(data);
+    }
     // TODO: check address range and data length
     address &= MEMORY_MASK;
-    len = PyString_Size(data);
-    bytes = PyString_AsString(data);
     TRACE("load_memory at %04x, %i bytes\n", address, len);
     for (int i = 0; (i < len) && (address < MEMORY_SIZE); i++, address++) {
         self->context.memory[address] = bytes[i];
